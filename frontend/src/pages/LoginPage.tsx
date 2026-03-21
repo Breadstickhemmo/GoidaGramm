@@ -68,7 +68,6 @@ const handleSubmit = async (e: React.FormEvent) => {
 
   return (
     <div className="login-split-container">
-      {/* Левая часть - Форма */}
       <div className="auth-section">
         <div className="auth-header-top animate-fade-in" style={{ animationDelay: '0.1s' }}>
           <div className="logo-wrapper">
@@ -144,7 +143,6 @@ const handleSubmit = async (e: React.FormEvent) => {
                 </span>
                 Запомнить меня
               </label>
-              {/* Заменили ссылку на кнопку для открытия модалки */}
               <button type="button" className="text-action-btn" onClick={() => setActiveModal('forgot')}>Забыли пароль?</button>
             </div>
 
@@ -157,7 +155,6 @@ const handleSubmit = async (e: React.FormEvent) => {
           </form>
 
           <div className="auth-footer animate-fade-in" style={{ animationDelay: '0.4s' }}>
-            {/* Заменили ссылку на кнопку для открытия модалки */}
             <p>Нужна помощь? <button type="button" className="text-action-btn" onClick={() => setActiveModal('support')}>Написать IT-отделу</button></p>
           </div>
         </div>
@@ -167,7 +164,6 @@ const handleSubmit = async (e: React.FormEvent) => {
         </div>
       </div>
 
-      {/* Правая часть - Брендинг */}
       <div className="brand-section">
         <div className="brand-glow-1"></div>
         <div className="brand-glow-2"></div>
@@ -203,7 +199,6 @@ const handleSubmit = async (e: React.FormEvent) => {
         </div>
       </div>
 
-      {/* --- МОДАЛЬНЫЕ ОКНА --- */}
       {activeModal && (
         <div className="modal-overlay" onClick={() => setActiveModal(null)}>
           <div className="modal-container animate-scale-in" onClick={e => e.stopPropagation()}>
