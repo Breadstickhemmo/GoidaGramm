@@ -1,12 +1,14 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { LoginPage } from './pages/LoginPage';
-import { AdminPage } from './pages/AdminPage';
+import { AdminPage } from './pages/AdminPage/index';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { Toaster } from 'react-hot-toast';
 
 function App() {
   return (
     <AuthProvider>
+      <Toaster position="top-right" reverseOrder={false} />
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />

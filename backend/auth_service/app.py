@@ -18,12 +18,21 @@ def create_app():
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
 
     with app.app_context():
-        db.create_all()
-        if not User.query.filter_by(role='Admin').first():
-            hpw = bcrypt.generate_password_hash(os.getenv('ADMIN_PASSWORD')).decode('utf-8')
-            admin = User(email=os.getenv('ADMIN_EMAIL'), password_hash=hpw, full_name="Admin", role="Admin")
-            db.session.add(admin)
-            db.session.commit()
+            db.create_all()
+            if not User.query.filter_by(role='Admin').first():
+                hpw = bcrypt.generate_password_hash(os.getenv('ADMIN_PASSWORD', 'admin12345')).decode('utf-8')
+                admin = User(
+                    email=os.getenv('ADMIN_EMAIL', 'admin@goida.ru'), 
+                    password_hash=hpw, 
+                    first_name="Системный",
+                    last_name="Администратор",
+                    position="IT-Департамент",
+                    role="Admin",
+                    status="online"
+                )
+                db.session.add(admin)
+                db.session.commit()
+                print("Первый администратор успешно создан в новой модели!")
     
     return app
 

@@ -31,3 +31,18 @@ button {
 input {
   transition: border-color 0.2s;
 }
+
+.react-hot-toast {
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  padding: 12px 20px !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+}
+
+.go-toast-success {
+  background: #ecfdf5 !important;
+  color: #10b981 !important;
+  border: 1px solid #10b981 !important;
+}
