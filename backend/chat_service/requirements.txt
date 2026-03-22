@@ -1,5 +1,6 @@
-flask
-flask-socketio
-eventlet
-flask-sqlalchemy
+Flask
+Flask-SQLAlchemy
 psycopg2-binary
+Flask-SocketIO
+Flask-JWT-Extended
+eventlet

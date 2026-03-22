@@ -1,0 +1,134 @@
+.chat-sidebar {
+  width: 350px;
+  background: #ffffff;
+  border-right: 1px solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 10;
+}
+
+.sidebar-header {
+  padding: 10px 15px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.menu-btn {
+  background: none;
+  border: none;
+  color: #707579;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.menu-btn:hover {
+  background: #f4f4f5;
+}
+
+.search-box {
+  flex: 1;
+  position: relative;
+}
+
+.search-box input {
+  width: 100%;
+  background: #f4f4f5;
+  border: 1px solid transparent;
+  padding: 10px 15px 10px 40px;
+  border-radius: 22px;
+  font-size: 0.95rem;
+  outline: none;
+  transition: all 0.2s;
+  box-sizing: border-box;
+}
+
+.search-box input:focus {
+  background: #ffffff;
+  border-color: #3390ec;
+}
+
+.search-box svg {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9aa0a6;
+  pointer-events: none;
+}
+
+.chat-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.list-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 15px;
+  cursor: pointer;
+  border-radius: 10px;
+  margin: 0 5px;
+  transition: background 0.1s;
+}
+
+.list-item:hover {
+  background: #f4f4f5;
+}
+
+.list-item.active {
+  background: #3390ec;
+}
+
+.list-item.active .chat-name, 
+.list-item.active .chat-preview {
+  color: #ffffff;
+}
+
+.avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 1.2rem;
+  color: white;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.avatar.blue { background: linear-gradient(135deg, #3390ec, #51a5f4); }
+.avatar.green { background: linear-gradient(135deg, #27ae60, #2ecc71); }
+.avatar.purple { background: linear-gradient(135deg, #8e44ad, #9b59b6); }
+
+.item-info {
+  flex: 1;
+  overflow: hidden;
+}
+
+.chat-name {
+  font-weight: 600;
+  color: #000000;
+  font-size: 1rem;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-preview {
+  font-size: 0.9rem;
+  color: #707579;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

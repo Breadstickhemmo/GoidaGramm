@@ -1,0 +1,90 @@
+.telegram-drawer {
+  position: absolute;
+  top: 0;
+  left: -350px;
+  width: 300px;
+  height: 100%;
+  background: white;
+  z-index: 100;
+  box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+  transition: left 0.3s cubic-bezier(0.0, 0.0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+.telegram-drawer.open {
+  left: 0;
+}
+
+.drawer-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.3);
+  z-index: 50;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+
+.drawer-overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.drawer-header {
+  padding: 20px;
+  background: #3390ec;
+  color: white;
+}
+
+.drawer-avatar {
+  width: 60px;
+  height: 60px;
+  background: white;
+  color: #3390ec;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 15px;
+}
+
+.drawer-user-info h3 {
+  margin: 0 0 5px 0;
+  font-size: 1.1rem;
+}
+
+.drawer-user-info p {
+  margin: 0;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.drawer-menu {
+  padding: 10px 0;
+}
+
+.drawer-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 15px 25px;
+  color: #000;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.drawer-menu-item svg {
+  color: #707579;
+}
+
+.drawer-menu-item:hover {
+  background: #f4f4f5;
+}

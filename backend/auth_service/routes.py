@@ -69,3 +69,10 @@ def admin_create_user():
     db.session.add(new_user)
     db.session.commit()
     return jsonify({"msg": "Сотрудник успешно создан"}), 201
+
+@auth_bp.route('/users', methods=['GET'])
+@jwt_required()
+def get_users_for_chat():
+    current_user_id = int(get_jwt_identity())
+    users = User.query.filter(User.id != current_user_id).all()
+    return jsonify([u.to_dict() for u in users]), 200

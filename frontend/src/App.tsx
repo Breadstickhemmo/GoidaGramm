@@ -1,7 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { SocketProvider } from './context/SocketContext';
 import { LoginPage } from './pages/LoginPage';
 import { AdminPage } from './pages/AdminPage/index';
+import { ChatPage } from './pages/ChatPage/index';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Toaster } from 'react-hot-toast';
 
@@ -15,7 +17,9 @@ function App() {
           
           <Route path="/" element={
             <ProtectedRoute>
-              <div>Панель Чатов (Этап 3)</div>
+              <SocketProvider>
+                <ChatPage />
+              </SocketProvider>
             </ProtectedRoute>
           } />
 

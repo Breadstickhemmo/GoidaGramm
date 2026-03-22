@@ -34,6 +34,9 @@ services:
   chat_service:
     build: ./backend/chat_service
     container_name: chat_service
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD:-goida_secure_pass}@db:5432/${POSTGRES_DB:-messenger_db}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-supersecret}
     depends_on:
       db:
         condition: service_healthy
@@ -52,6 +55,8 @@ services:
   frontend:
     build: ./frontend
     container_name: frontend_app
+    environment:
+      - WDS_SOCKET_PORT=0
     networks:
       - messenger_net
 
