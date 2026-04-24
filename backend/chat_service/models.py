@@ -13,13 +13,15 @@ class Chat(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     type = db.Column(db.String(10), default='group')
     title = db.Column(db.String(100), nullable=True)
+    creator_id = db.Column(db.Integer, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def to_dict(self):
         return {
             "id": self.id,
             "type": self.type,
-            "title": self.title
+            "title": self.title,
+            "creator_id": self.creator_id
         }
 
 class Message(db.Model):
@@ -28,6 +30,8 @@ class Message(db.Model):
     chat_id = db.Column(db.Integer, db.ForeignKey('chats.id'), nullable=False)
     sender_id = db.Column(db.Integer, nullable=False)
     content = db.Column(db.Text, nullable=False)
+    file_id = db.Column(db.Integer, nullable=True)
+    is_edited = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def to_dict(self):
@@ -36,5 +40,7 @@ class Message(db.Model):
             "chat_id": self.chat_id,
             "sender_id": self.sender_id,
             "content": self.content,
+            "file_id": self.file_id,
+            "is_edited": self.is_edited,
             "created_at": self.created_at.isoformat()
         }

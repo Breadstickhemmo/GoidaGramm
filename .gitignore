@@ -15,6 +15,7 @@
 
 **/db_data/
 **/postgres_data/
+**/uploads/
 
 .vscode/
 *.swp

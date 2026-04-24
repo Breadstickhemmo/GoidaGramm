@@ -1,5 +1,4 @@
 import React from 'react';
-
 import '../../styles/ChatPageStyles/chat-sidebar.css';
 
 interface ChatSidebarProps {
@@ -13,11 +12,12 @@ interface ChatSidebarProps {
     activeChat: any;
     setActiveChat: (chat: any) => void;
     startPrivateChat: (user: any) => void;
+    onOpenCreateGroup: () => void;
 }
 
 export const ChatSidebar: React.FC<ChatSidebarProps> = ({
     onOpenDrawer, searchQuery, setSearchQuery, isSearching, setIsSearching,
-    contacts, chats, activeChat, setActiveChat, startPrivateChat
+    contacts, chats, activeChat, setActiveChat, startPrivateChat, onOpenCreateGroup
 }) => {
 
     const filteredContacts = contacts.filter(c => 
@@ -39,6 +39,11 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
+                {!isSearching && (
+                    <button className="menu-btn" title="Создать группу" onClick={onOpenCreateGroup}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14"></path></svg>
+                    </button>
+                )}
                 {isSearching && (
                     <button className="menu-btn" onClick={() => { setIsSearching(false); setSearchQuery(''); }}>
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -50,10 +55,13 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                 {isSearching ? (
                     filteredContacts.map(contact => (
                         <div key={contact.id} className="list-item" onClick={() => startPrivateChat(contact)}>
-                            <div className="avatar blue">{contact.first_name[0]}</div>
+                            <div className="avatar blue">
+                                {contact.first_name[0]}
+                                {contact.status === 'online' && <span className="online-indicator"></span>}
+                            </div>
                             <div className="item-info">
                                 <div className="chat-name">{contact.full_name}</div>
-                                <div className="chat-preview">{contact.position}</div>
+                                <div className="chat-preview">{contact.status === 'online' ? 'в сети' : 'был(а) недавно'}</div>
                             </div>
                         </div>
                     ))
@@ -64,9 +72,15 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                             className={`list-item ${activeChat?.id === chat.id ? 'active' : ''}`}
                             onClick={() => setActiveChat(chat)}
                         >
-                            <div className="avatar purple">{chat.title ? chat.title[0] : '#'}</div>
+                            <div className="avatar purple">
+                                {chat.title ? chat.title[0] : '#'}
+                                {chat.status === 'online' && <span className="online-indicator"></span>}
+                            </div>
                             <div className="item-info">
                                 <div className="chat-name">{chat.title || "Личный чат"}</div>
+                                <div className="chat-preview" style={{color: chat.status === 'online' ? '#10b981' : '#707579'}}>
+                                    {chat.type === 'group' ? 'Групповой чат' : (chat.status === 'online' ? 'в сети' : '')}
+                                </div>
                             </div>
                         </div>
                     ))

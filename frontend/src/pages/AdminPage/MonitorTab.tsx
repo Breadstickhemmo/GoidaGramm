@@ -37,7 +37,7 @@ export const MonitorTab = ({ users, searchTerm, setSearchTerm, filterStatus, set
               </td>
               <td>{u.position}</td>
               <td>{u.email}</td>
-              <td><span className={`status-pill ${u.status}`}>{u.status}</span></td>
+              <td><span className={`status-pill ${u.status}`}>{u.status === 'online' ? 'В сети' : 'Оффлайн'}</span></td>
               <td className="actions-cell" style={{textAlign: 'center'}}>
                 <button className="dots-btn" onClick={() => setOpenMenuId(openMenuId === u.id ? null : u.id)}>⋮</button>
                 {openMenuId === u.id && (

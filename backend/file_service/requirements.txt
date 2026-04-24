@@ -1,3 +1,5 @@
-flask
-flask-sqlalchemy
+Flask
+Flask-SQLAlchemy
+flask-jwt-extended
 psycopg2-binary
+Flask-Cors

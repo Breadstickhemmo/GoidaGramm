@@ -13,11 +13,15 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             const token = localStorage.getItem('token');
             const newSocket = io("/", {
                 path: "/api/chat/socket.io",
-                query: { token }
+                query: { token },
+                reconnectionAttempts: 5,
+                reconnectionDelay: 1000
             });
 
             setSocket(newSocket);
-            return () => { newSocket.close(); };
+            return () => {
+                newSocket.close();
+            };
         }
     }, [user]);
 
