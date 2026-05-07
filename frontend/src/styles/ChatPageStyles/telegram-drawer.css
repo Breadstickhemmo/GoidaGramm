@@ -88,3 +88,67 @@
 .drawer-menu-item:hover {
   background: #f4f4f5;
 }
+
+.drawer-form {
+  padding: 15px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.drawer-form-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #707579;
+  margin-bottom: -5px;
+}
+
+.drawer-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  outline: none;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+}
+
+.drawer-input:focus {
+  border-color: #3390ec;
+}
+
+.drawer-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.drawer-btn-save {
+  flex: 1;
+  background: #3390ec;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.drawer-btn-save:hover {
+  background: #2785db;
+}
+
+.drawer-btn-cancel {
+  flex: 1;
+  background: #f4f4f5;
+  color: #ef4444;
+  border: none;
+  padding: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.drawer-btn-cancel:hover {
+  background: #e0e0e0;
+}

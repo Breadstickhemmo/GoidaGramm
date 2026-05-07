@@ -35,13 +35,14 @@ def get_my_chats():
             if other_member:
                 target_id = other_member[0]
                 user_req = db.session.execute(
-                    text("SELECT first_name, last_name, status FROM users WHERE id = :uid"), 
+                    text("SELECT first_name, last_name, status, avatar_url FROM users WHERE id = :uid"), 
                     {'uid': target_id}
                 ).first()
                 
                 if user_req:
                     c_dict['title'] = f"{user_req[1]} {user_req[0]}"
                     c_dict['status'] = user_req[2]
+                    c_dict['avatar_url'] = user_req[3]
                     c_dict['target_id'] = target_id
         result.append(c_dict)
         
@@ -56,7 +57,7 @@ def get_chat_history(chat_id):
         return jsonify({"msg": "Отказано в доступе"}), 403
     
     query = text("""
-        SELECT m.id, m.chat_id, m.sender_id, m.content, m.file_id, m.created_at, u.first_name, u.last_name, m.is_edited
+        SELECT m.id, m.chat_id, m.sender_id, m.content, m.file_id, m.created_at, u.first_name, u.last_name, m.is_edited, u.avatar_url
         FROM messages m
         JOIN users u ON m.sender_id = u.id
         WHERE m.chat_id = :cid
@@ -74,7 +75,8 @@ def get_chat_history(chat_id):
             "file_id": r[4],
             "created_at": r[5].isoformat(),
             "sender_name": f"{r[7]} {r[6]}" if r[6] else "Пользователь",
-            "is_edited": r[8]
+            "is_edited": r[8],
+            "avatar_url": r[9]
         })
         
     return jsonify(messages), 200
@@ -94,18 +96,20 @@ def get_or_create_private_chat():
         .filter(chat_members.c.user_id == target_id).first()
 
     user_req = db.session.execute(
-        text("SELECT first_name, last_name, status FROM users WHERE id = :uid"), 
+        text("SELECT first_name, last_name, status, avatar_url FROM users WHERE id = :uid"), 
         {'uid': target_id}
     ).first()
     
     target_name = f"{user_req[1]} {user_req[0]}" if user_req else "Личный чат"
     target_status = user_req[2] if user_req else "offline"
+    target_avatar = user_req[3] if user_req else None
 
     if common_chat:
         chat = Chat.query.get(common_chat[0])
         c_dict = chat.to_dict()
         c_dict['title'] = target_name
         c_dict['status'] = target_status
+        c_dict['avatar_url'] = target_avatar
         c_dict['target_id'] = target_id
         return jsonify(c_dict), 200
 
@@ -120,6 +124,7 @@ def get_or_create_private_chat():
     c_dict = new_chat.to_dict()
     c_dict['title'] = target_name
     c_dict['status'] = target_status
+    c_dict['avatar_url'] = target_avatar
     c_dict['target_id'] = target_id
     return jsonify(c_dict), 201
 
@@ -148,11 +153,11 @@ def create_group():
 @jwt_required()
 def get_group_members(chat_id):
     members = db.session.execute(
-        text("SELECT u.id, u.first_name, u.last_name, u.status FROM users u JOIN chat_members cm ON u.id = cm.user_id WHERE cm.chat_id = :cid"),
+        text("SELECT u.id, u.first_name, u.last_name, u.status, u.avatar_url FROM users u JOIN chat_members cm ON u.id = cm.user_id WHERE cm.chat_id = :cid"),
         {'cid': chat_id}
     ).fetchall()
     
-    result = [{"id": m[0], "full_name": f"{m[2]} {m[1]}", "status": m[3]} for m in members]
+    result = [{"id": m[0], "full_name": f"{m[2]} {m[1]}", "status": m[3], "avatar_url": m[4]} for m in members]
     return jsonify(result), 200
 
 @chat_bp.route('/group/<int:chat_id>/title', methods=['PUT'])
@@ -261,11 +266,13 @@ def handle_message(data):
     db.session.add(new_msg)
     db.session.commit()
 
-    user_req = db.session.execute(text("SELECT first_name, last_name FROM users WHERE id = :uid"), {'uid': user_id}).first()
+    user_req = db.session.execute(text("SELECT first_name, last_name, avatar_url FROM users WHERE id = :uid"), {'uid': user_id}).first()
     sender_name = f"{user_req[1]} {user_req[0]}" if user_req else "Пользователь"
+    avatar_url = user_req[2] if user_req else None
     
     msg_dict = new_msg.to_dict()
     msg_dict['sender_name'] = sender_name
+    msg_dict['avatar_url'] = avatar_url
     
     emit('new_message', msg_dict, room=f"chat_{chat_id}")
 

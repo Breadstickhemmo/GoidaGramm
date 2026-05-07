@@ -13,16 +13,24 @@ interface ChatSidebarProps {
     setActiveChat: (chat: any) => void;
     startPrivateChat: (user: any) => void;
     onOpenCreateGroup: () => void;
+    unreadCounts: {[key: number]: number};
 }
 
 export const ChatSidebar: React.FC<ChatSidebarProps> = ({
     onOpenDrawer, searchQuery, setSearchQuery, isSearching, setIsSearching,
-    contacts, chats, activeChat, setActiveChat, startPrivateChat, onOpenCreateGroup
+    contacts, chats, activeChat, setActiveChat, startPrivateChat, onOpenCreateGroup,
+    unreadCounts
 }) => {
 
     const filteredContacts = contacts.filter(c => 
         c.full_name.toLowerCase().includes(searchQuery.toLowerCase())
     );
+
+    const getAvatarSrc = (url: string) => {
+        if (!url) return null;
+        const token = localStorage.getItem('token');
+        return `${url}?jwt=${token}`;
+    };
 
     return (
         <aside className="chat-sidebar">
@@ -55,8 +63,12 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                 {isSearching ? (
                     filteredContacts.map(contact => (
                         <div key={contact.id} className="list-item" onClick={() => startPrivateChat(contact)}>
-                            <div className="avatar blue">
-                                {contact.first_name[0]}
+                            <div className="avatar blue" style={{overflow: 'hidden'}}>
+                                {contact.avatar_url ? (
+                                    <img src={getAvatarSrc(contact.avatar_url) as string} alt="" style={{width: '100%', height: '100%', objectFit: 'cover'}} />
+                                ) : (
+                                    contact.first_name[0]
+                                )}
                                 {contact.status === 'online' && <span className="online-indicator"></span>}
                             </div>
                             <div className="item-info">
@@ -72,14 +84,27 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({
                             className={`list-item ${activeChat?.id === chat.id ? 'active' : ''}`}
                             onClick={() => setActiveChat(chat)}
                         >
-                            <div className="avatar purple">
-                                {chat.title ? chat.title[0] : '#'}
+                            <div className="avatar purple" style={{overflow: 'hidden'}}>
+                                {chat.avatar_url ? (
+                                    <img src={getAvatarSrc(chat.avatar_url) as string} alt="" style={{width: '100%', height: '100%', objectFit: 'cover'}} />
+                                ) : (
+                                    chat.title ? chat.title[0] : '#'
+                                )}
                                 {chat.status === 'online' && <span className="online-indicator"></span>}
                             </div>
-                            <div className="item-info">
-                                <div className="chat-name">{chat.title || "Личный чат"}</div>
-                                <div className="chat-preview" style={{color: chat.status === 'online' ? '#10b981' : '#707579'}}>
-                                    {chat.type === 'group' ? 'Групповой чат' : (chat.status === 'online' ? 'в сети' : '')}
+                            <div className="item-info" style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                                    <div className="chat-name">{chat.title || "Личный чат"}</div>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div className="chat-preview" style={{color: chat.status === 'online' ? '#10b981' : '#707579'}}>
+                                        {chat.type === 'group' ? 'Групповой чат' : (chat.status === 'online' ? 'в сети' : '')}
+                                    </div>
+                                    {unreadCounts[chat.id] > 0 && (
+                                        <div className="unread-badge">
+                                            {unreadCounts[chat.id] > 99 ? '99+' : unreadCounts[chat.id]}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>

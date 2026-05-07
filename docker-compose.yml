@@ -72,6 +72,7 @@ services:
     container_name: messenger_gateway
     ports:
       - "80:80"
+      - "443:443"
     depends_on:
       - auth_service
       - chat_service

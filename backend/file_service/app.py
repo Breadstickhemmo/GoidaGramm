@@ -40,7 +40,7 @@ def upload_file():
         return jsonify({"msg": "Файлы без расширения запрещены"}), 400
     
     if extension in BANNED_EXTENSIONS:
-        return jsonify({"msg": f"Тип .{extension} запрещен политикой безопасности"}), 403
+        return jsonify({"msg": f"Тип .{extension} запрещен политикой безопасности"}), 400
 
     storage_name = f"{uuid.uuid4()}.{extension}"
     display_name = os.path.basename(raw_filename)

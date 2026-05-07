@@ -30,6 +30,7 @@ class User(db.Model):
             "middle_name": self.middle_name or "",
             "full_name": f"{self.last_name} {self.first_name} {self.middle_name or ''}".strip(),
             "position": self.position or "Не указана",
+            "avatar_url": self.avatar_url,
             "role": self.role,
             "status": self.status,
             "last_seen": self.last_seen.isoformat() if self.last_seen else None

@@ -155,3 +155,16 @@
   border-radius: 50%;
   z-index: 2;
 }
+
+.unread-badge {
+  background-color: #3390ec;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 10px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

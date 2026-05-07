@@ -1,3 +1,4 @@
+import re
 from flask import Blueprint, request, jsonify
 from extensions import db, bcrypt
 from models import User
@@ -28,6 +29,30 @@ def get_me():
         return jsonify({"msg": "Пользователь не найден"}), 404
     return jsonify(user.to_dict()), 200
 
+@auth_bp.route('/me', methods=['PUT'])
+@jwt_required()
+def update_me():
+    user_id = get_jwt_identity()
+    user = User.query.get(int(user_id))
+    if not user:
+        return jsonify({"msg": "Пользователь не найден"}), 404
+        
+    data = request.get_json()
+    
+    if 'first_name' in data:
+        user.first_name = data['first_name']
+    if 'last_name' in data:
+        user.last_name = data['last_name']
+    if 'middle_name' in data:
+        user.middle_name = data['middle_name']
+    if 'position' in data:
+        user.position = data['position']
+    if 'avatar_url' in data:
+        user.avatar_url = data['avatar_url']
+        
+    db.session.commit()
+    return jsonify(user.to_dict()), 200
+
 @auth_bp.route('/admin/users', methods=['GET'])
 @jwt_required()
 def get_all_users():
@@ -50,13 +75,27 @@ def admin_create_user():
         return jsonify({"msg": "Доступ запрещен"}), 403
 
     data = request.get_json()
-    if User.query.filter_by(email=data.get('email')).first():
+    email = data.get('email')
+    password = data.get('password')
+
+    if User.query.filter_by(email=email).first():
         return jsonify({"msg": "Сотрудник с таким Email уже существует"}), 400
 
-    hashed_pw = bcrypt.generate_password_hash(data.get('password')).decode('utf-8')
+    if len(password) < 8:
+        return jsonify({"msg": "Пароль должен быть не менее 8 символов"}), 400
+    if not re.search(r"[a-zа-я]", password):
+        return jsonify({"msg": "Пароль должен содержать строчные буквы"}), 400
+    if not re.search(r"[A-ZА-Я]", password):
+        return jsonify({"msg": "Пароль должен содержать заглавные буквы"}), 400
+    if not re.search(r"[0-9]", password):
+        return jsonify({"msg": "Пароль должен содержать цифры"}), 400
+    if not re.search(r"[!@#$%^&*()_+={}\[\]:;<>,.?/~`|-]", password):
+        return jsonify({"msg": "Пароль должен содержать специальные символы"}), 400
+
+    hashed_pw = bcrypt.generate_password_hash(password).decode('utf-8')
     
     new_user = User(
-        email=data.get('email'),
+        email=email,
         password_hash=hashed_pw,
         first_name=data.get('first_name'),
         last_name=data.get('last_name'),

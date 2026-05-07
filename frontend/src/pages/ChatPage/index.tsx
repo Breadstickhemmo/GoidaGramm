@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import toast from 'react-hot-toast';
 import { useSocket } from '../../context/SocketContext';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
@@ -6,6 +7,7 @@ import { TelegramDrawer } from './TelegramDrawer';
 import { ChatSidebar } from './ChatSidebar';
 import { ChatMain } from './ChatMain';
 import { CreateGroupModal, ManageGroupModal } from './GroupModals';
+import { ProfileModal } from './ProfileModal';
 import '../../styles/ChatPageStyles/chat-layout.css';
 
 export const ChatPage = () => {
@@ -18,11 +20,26 @@ export const ChatPage = () => {
     const [messages, setMessages] = useState<any[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearching, setIsSearching] = useState(false);
+    
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
     const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
     const [isManageGroupOpen, setIsManageGroupOpen] = useState(false);
     
+    const [unreadCounts, setUnreadCounts] = useState<{[key: number]: number}>({});
+    
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const chatsRef = useRef<any[]>([]);
+
+    useEffect(() => {
+        chatsRef.current = chats;
+    }, [chats]);
+
+    useEffect(() => {
+        if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+            Notification.requestPermission();
+        }
+    }, []);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -40,6 +57,13 @@ export const ChatPage = () => {
 
     useEffect(() => {
         if (activeChat) {
+            setUnreadCounts(prev => {
+                if (!prev[activeChat.id]) return prev;
+                const next = { ...prev };
+                delete next[activeChat.id];
+                return next;
+            });
+
             api.get(`/api/chat/${activeChat.id}/messages`)
                .then(res => setMessages(res.data))
                .catch(console.error);
@@ -54,8 +78,39 @@ export const ChatPage = () => {
         if (!socket) return;
 
         const handleNewMessage = (msg: any) => {
-            if (activeChat && Number(msg.chat_id) === Number(activeChat.id)) {
+            const isCurrentChat = activeChat && Number(msg.chat_id) === Number(activeChat.id);
+            const isMine = msg.sender_id === user.id;
+
+            if (isCurrentChat) {
                 setMessages((prev: any[]) => [...prev, msg]);
+            } else {
+                setUnreadCounts(prev => ({
+                    ...prev,
+                    [msg.chat_id]: (prev[msg.chat_id] || 0) + 1
+                }));
+            }
+
+            if (!isMine) {
+                const targetChat = chatsRef.current.find(c => Number(c.id) === Number(msg.chat_id));
+                let title = msg.sender_name || 'Новое сообщение';
+                
+                if (targetChat && targetChat.type === 'group') {
+                    title = `${targetChat.title} (${msg.sender_name})`;
+                }
+
+                const body = msg.file_id ? '📎 Вложение' : msg.content;
+
+                if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
+                    new Notification(title, { body });
+                }
+
+                if (!isCurrentChat && !document.hidden) {
+                    toast(`${title}: ${body}`, {
+                        icon: '💬',
+                        position: 'bottom-right',
+                        duration: 4000
+                    });
+                }
             }
         };
 
@@ -102,7 +157,7 @@ export const ChatPage = () => {
             socket.off('message_edited', handleMessageEdited);
             socket.off('message_deleted', handleMessageDeleted);
         };
-    }, [socket, activeChat]);
+    }, [socket, activeChat, user]);
 
     const startPrivateChat = async (targetUser: any) => {
         try {
@@ -111,6 +166,7 @@ export const ChatPage = () => {
             chatData.title = targetUser.full_name;
             chatData.target_id = targetUser.id;
             chatData.status = targetUser.status;
+            chatData.avatar_url = targetUser.avatar_url;
             
             if (!chats.find(c => c.id === chatData.id)) {
                 setChats((prev: any[]) => [chatData, ...prev]);
@@ -126,8 +182,19 @@ export const ChatPage = () => {
 
     return (
         <div className="chat-layout">
-            <TelegramDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} user={user} logout={logout} />
+            <TelegramDrawer 
+                isOpen={isDrawerOpen} 
+                onClose={() => setIsDrawerOpen(false)} 
+                user={user} 
+                logout={logout} 
+                onOpenProfile={() => setIsProfileModalOpen(true)}
+            />
             
+            <ProfileModal 
+                isOpen={isProfileModalOpen} 
+                onClose={() => setIsProfileModalOpen(false)} 
+            />
+
             {isCreateGroupOpen && (
                 <CreateGroupModal 
                     contacts={contacts} 
@@ -169,6 +236,7 @@ export const ChatPage = () => {
                     }
                     setIsCreateGroupOpen(true);
                 }}
+                unreadCounts={unreadCounts}
             />
             <ChatMain 
                 activeChat={activeChat}

@@ -18,15 +18,89 @@ export const ChatMain: React.FC<ChatMainProps> = ({
     const socket = useSocket();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+    const msgRefs = useRef<{[key: string]: HTMLDivElement | null}>({});
     const currentToken = localStorage.getItem('token');
     
     const [input, setInput] = useState('');
     const [editingMsg, setEditingMsg] = useState<any>(null);
 
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [currentMatchIndex, setCurrentMatchIndex] = useState(-1);
+    
+    const matches = messages.filter(m => 
+        !m.file_id && m.content.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
     useEffect(() => {
         setInput('');
         setEditingMsg(null);
+        setIsSearchOpen(false);
+        setSearchQuery('');
+        setCurrentMatchIndex(-1);
     }, [activeChat]);
+
+    const scrollToMsg = (id: string) => {
+        setTimeout(() => {
+            msgRefs.current[id]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 50);
+    };
+
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const query = e.target.value;
+        setSearchQuery(query);
+        
+        const newMatches = messages.filter(m => !m.file_id && m.content.toLowerCase().includes(query.toLowerCase()));
+        if (query && newMatches.length > 0) {
+            const lastIndex = newMatches.length - 1;
+            setCurrentMatchIndex(lastIndex);
+            scrollToMsg(newMatches[lastIndex].id);
+        } else {
+            setCurrentMatchIndex(-1);
+        }
+    };
+
+    const handleNextMatch = () => {
+        if (matches.length === 0) return;
+        let nextIndex = currentMatchIndex + 1;
+        if (nextIndex >= matches.length) nextIndex = 0;
+        setCurrentMatchIndex(nextIndex);
+        scrollToMsg(matches[nextIndex].id);
+    };
+
+    const handlePrevMatch = () => {
+        if (matches.length === 0) return;
+        let prevIndex = currentMatchIndex - 1;
+        if (prevIndex < 0) prevIndex = matches.length - 1;
+        setCurrentMatchIndex(prevIndex);
+        scrollToMsg(matches[prevIndex].id);
+    };
+
+    const closeSearch = () => {
+        setIsSearchOpen(false);
+        setSearchQuery('');
+        setCurrentMatchIndex(-1);
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
+
+    const renderContent = (msg: any) => {
+        if (!searchQuery || msg.file_id) return msg.content;
+        
+        const regex = new RegExp(`(${searchQuery})`, 'gi');
+        const parts = msg.content.split(regex);
+        const isCurrentMatchMsg = matches[currentMatchIndex]?.id === msg.id;
+
+        return parts.map((part: string, i: number) => {
+            if (part.toLowerCase() === searchQuery.toLowerCase()) {
+                return (
+                    <mark key={i} className={`highlight-match ${isCurrentMatchMsg ? 'active' : ''}`}>
+                        {part}
+                    </mark>
+                );
+            }
+            return part;
+        });
+    };
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -94,6 +168,11 @@ export const ChatMain: React.FC<ChatMainProps> = ({
         setInput('');
     };
 
+    const getAvatarSrc = (url: string) => {
+        if (!url) return null;
+        return `${url}?jwt=${currentToken}`;
+    };
+
     if (!activeChat) {
         return (
             <main className="chat-main">
@@ -109,19 +188,50 @@ export const ChatMain: React.FC<ChatMainProps> = ({
     return (
         <main className="chat-main">
             <div className="chat-header">
-                <div className="item-info">
-                    <div className="chat-name" style={{fontSize: '1.1rem', fontWeight: 700}}>
-                        {activeChat.title || "Личный чат"}
+                {isSearchOpen ? (
+                    <div className="message-search-bar">
+                        <input 
+                            autoFocus
+                            className="message-search-input"
+                            placeholder="Поиск по сообщениям..."
+                            value={searchQuery}
+                            onChange={handleSearchChange}
+                        />
+                        <span className="search-count">
+                            {searchQuery ? (matches.length > 0 ? `${currentMatchIndex + 1} из ${matches.length}` : '0 из 0') : ''}
+                        </span>
+                        <button className="search-nav-btn" onClick={handlePrevMatch} disabled={!searchQuery || matches.length === 0}>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                        </button>
+                        <button className="search-nav-btn" onClick={handleNextMatch} disabled={!searchQuery || matches.length === 0}>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </button>
+                        <button className="search-nav-btn" style={{marginLeft: '5px'}} onClick={closeSearch}>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </button>
                     </div>
-                    <div className="chat-status" style={{fontSize: '0.85rem', color: activeChat.status === 'online' ? '#3390ec' : '#707579'}}>
-                        {activeChat.type === 'group' ? 'Групповой чат' : (activeChat.status === 'online' ? 'в сети' : 'был(а) недавно')}
-                    </div>
-                </div>
-                
-                {activeChat.type === 'group' && (
-                    <button className="menu-btn" title="Настройки группы" onClick={onOpenManageGroup} style={{marginLeft: 'auto'}}>
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                    </button>
+                ) : (
+                    <>
+                        <div className="item-info">
+                            <div className="chat-name" style={{fontSize: '1.1rem', fontWeight: 700}}>
+                                {activeChat.title || "Личный чат"}
+                            </div>
+                            <div className="chat-status" style={{fontSize: '0.85rem', color: activeChat.status === 'online' ? '#3390ec' : '#707579'}}>
+                                {activeChat.type === 'group' ? 'Групповой чат' : (activeChat.status === 'online' ? 'в сети' : 'был(а) недавно')}
+                            </div>
+                        </div>
+                        
+                        <div style={{display: 'flex', marginLeft: 'auto', gap: '5px'}}>
+                            <button className="menu-btn" title="Поиск" onClick={() => setIsSearchOpen(true)}>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                            </button>
+                            {activeChat.type === 'group' && (
+                                <button className="menu-btn" title="Настройки группы" onClick={onOpenManageGroup}>
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                                </button>
+                            )}
+                        </div>
+                    </>
                 )}
             </div>
 
@@ -139,11 +249,15 @@ export const ChatMain: React.FC<ChatMainProps> = ({
                     const isLastFromSender = !nextMsg || nextMsg.sender_id !== m.sender_id;
 
                     return (
-                        <div key={i} className={`message-row ${isMine ? 'mine' : 'theirs'} ${isFirstFromSender ? 'mt-3' : 'mt-1'}`}>
+                        <div key={i} ref={el => { msgRefs.current[m.id] = el; }} className={`message-row ${isMine ? 'mine' : 'theirs'} ${isFirstFromSender ? 'mt-3' : 'mt-1'}`}>
                             {showAvatar && (
                                 isLastFromSender ? (
-                                    <div className="avatar blue message-avatar">
-                                        {m.sender_name ? m.sender_name[0] : '?'}
+                                    <div className="avatar blue message-avatar" style={{overflow: 'hidden'}}>
+                                        {m.avatar_url ? (
+                                            <img src={getAvatarSrc(m.avatar_url) as string} alt="" style={{width: '100%', height: '100%', objectFit: 'cover'}} />
+                                        ) : (
+                                            m.sender_name ? m.sender_name[0] : '?'
+                                        )}
                                     </div>
                                 ) : (
                                     <div className="message-avatar-spacer"></div>
@@ -180,19 +294,27 @@ export const ChatMain: React.FC<ChatMainProps> = ({
                                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                                         </a>
                                     ) : (
-                                        <div>{m.content}</div>
+                                        <div>{renderContent(m)}</div>
                                     )}
                                     
                                     <div className="message-time-container">
                                         {m.is_edited && <span className="message-edited-label">ред.</span>}
                                         <span className="message-time">{time}</span>
+                                        {isMine && (
+                                            <span className="message-status-ticks">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                    <polyline points="18 6 7 17 2 12"></polyline>
+                                                    <polyline points="22 10 11 21 8 18"></polyline>
+                                                </svg>
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
                             </div>
                         </div>
                     );
                 })}
-                <div ref={messagesEndRef} />
+                {!isSearchOpen && <div ref={messagesEndRef} />}
             </div>
 
             <div>
