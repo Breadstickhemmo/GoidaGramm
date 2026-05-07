@@ -34,7 +34,6 @@ export const AdminPage = () => {
     if (!nameRegex.test(formData.firstName) || !nameRegex.test(formData.lastName)) {
       return toast.error("В именах нельзя использовать цифры");
     }
-    if (formData.password.length < 8) return toast.error("Пароль от 8 символов");
 
     setIsLoading(true);
     try {
@@ -66,7 +65,14 @@ export const AdminPage = () => {
           {activeTab === 'monitor' && <button className="btn-submit" style={{padding: '10px 20px'}} onClick={() => setActiveTab('create')}>+ Добавить</button>}
         </header>
         {activeTab === 'monitor' ? 
-          <MonitorTab users={filtered} searchTerm={searchTerm} setSearchTerm={setSearchTerm} filterStatus={filterStatus} setFilterStatus={setFilterStatus} /> : 
+          <MonitorTab 
+            users={filtered} 
+            searchTerm={searchTerm} 
+            setSearchTerm={setSearchTerm} 
+            filterStatus={filterStatus} 
+            setFilterStatus={setFilterStatus} 
+            fetchUsers={fetchUsers}
+          /> : 
           <CreateTab formData={formData} setFormData={setFormData} handleCreate={handleCreate} isLoading={isLoading} />
         }
       </main>

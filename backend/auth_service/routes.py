@@ -1,10 +1,26 @@
-import re
 from flask import Blueprint, request, jsonify
 from extensions import db, bcrypt
 from models import User
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+import re
 
 auth_bp = Blueprint('auth', __name__)
+
+def validate_password(password):
+    if len(password) < 8:
+        return "Пароль должен быть не менее 8 символов"
+    if not re.search(r"[a-zа-я]", password):
+        return "Пароль должен содержать строчные буквы"
+    if not re.search(r"[A-ZА-Я]", password):
+        return "Пароль должен содержать заглавные буквы"
+    if not re.search(r"[0-9]", password):
+        return "Пароль должен содержать цифры"
+    if not re.search(r"[!@#$%^&*()_+={}\[\]:;<>,.?/~`|-]", password):
+        return "Пароль должен содержать специальные символы"
+    return None
+
+def validate_email(email):
+    return re.match(r"[^@]+@[^@]+\.[^@]+", email) is not None
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
@@ -78,19 +94,15 @@ def admin_create_user():
     email = data.get('email')
     password = data.get('password')
 
+    if not validate_email(email):
+        return jsonify({"msg": "Некорректный формат Email"}), 400
+
     if User.query.filter_by(email=email).first():
         return jsonify({"msg": "Сотрудник с таким Email уже существует"}), 400
 
-    if len(password) < 8:
-        return jsonify({"msg": "Пароль должен быть не менее 8 символов"}), 400
-    if not re.search(r"[a-zа-я]", password):
-        return jsonify({"msg": "Пароль должен содержать строчные буквы"}), 400
-    if not re.search(r"[A-ZА-Я]", password):
-        return jsonify({"msg": "Пароль должен содержать заглавные буквы"}), 400
-    if not re.search(r"[0-9]", password):
-        return jsonify({"msg": "Пароль должен содержать цифры"}), 400
-    if not re.search(r"[!@#$%^&*()_+={}\[\]:;<>,.?/~`|-]", password):
-        return jsonify({"msg": "Пароль должен содержать специальные символы"}), 400
+    pass_err = validate_password(password)
+    if pass_err:
+        return jsonify({"msg": pass_err}), 400
 
     hashed_pw = bcrypt.generate_password_hash(password).decode('utf-8')
     
@@ -108,6 +120,68 @@ def admin_create_user():
     db.session.add(new_user)
     db.session.commit()
     return jsonify({"msg": "Сотрудник успешно создан"}), 201
+
+@auth_bp.route('/admin/users/<int:target_id>', methods=['PUT'])
+@jwt_required()
+def admin_edit_user(target_id):
+    admin_id = get_jwt_identity()
+    admin = User.query.get(int(admin_id))
+    if not admin or admin.role != 'Admin':
+        return jsonify({"msg": "Доступ запрещен"}), 403
+
+    user = User.query.get_or_404(target_id)
+    data = request.get_json()
+    email = data.get('email')
+
+    if email and email != user.email:
+        if not validate_email(email):
+            return jsonify({"msg": "Некорректный формат Email"}), 400
+        if User.query.filter_by(email=email).first():
+            return jsonify({"msg": "Этот Email уже занят другим сотрудником"}), 400
+        user.email = email
+
+    user.first_name = data.get('first_name', user.first_name)
+    user.last_name = data.get('last_name', user.last_name)
+    user.middle_name = data.get('middle_name', user.middle_name)
+    user.position = data.get('position', user.position)
+
+    db.session.commit()
+    return jsonify(user.to_dict()), 200
+
+@auth_bp.route('/admin/users/<int:target_id>/reset-password', methods=['POST'])
+@jwt_required()
+def admin_reset_password(target_id):
+    admin_id = get_jwt_identity()
+    admin = User.query.get(int(admin_id))
+    if not admin or admin.role != 'Admin':
+        return jsonify({"msg": "Доступ запрещен"}), 403
+
+    user = User.query.get_or_404(target_id)
+    new_password = request.get_json().get('password')
+
+    pass_err = validate_password(new_password)
+    if pass_err:
+        return jsonify({"msg": pass_err}), 400
+
+    user.password_hash = bcrypt.generate_password_hash(new_password).decode('utf-8')
+    db.session.commit()
+    return jsonify({"msg": "Пароль успешно сброшен"}), 200
+
+@auth_bp.route('/admin/users/<int:target_id>', methods=['DELETE'])
+@jwt_required()
+def admin_delete_user(target_id):
+    admin_id = get_jwt_identity()
+    admin = User.query.get(int(admin_id))
+    if not admin or admin.role != 'Admin':
+        return jsonify({"msg": "Доступ запрещен"}), 403
+
+    user = User.query.get_or_404(target_id)
+    if user.role == 'Admin':
+        return jsonify({"msg": "Невозможно удалить системного администратора"}), 403
+
+    db.session.delete(user)
+    db.session.commit()
+    return jsonify({"msg": "Сотрудник удален"}), 200
 
 @auth_bp.route('/users', methods=['GET'])
 @jwt_required()
